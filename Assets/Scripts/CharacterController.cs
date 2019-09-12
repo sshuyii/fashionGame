@@ -5,18 +5,28 @@ using UnityEngine;
 
 public class CharacterController : MonoBehaviour
 {
-    private float speed;
+    public float speed;
+    public CameraController CameraController;
+
+    private Vector3 movement;
     
         
     // Start is called before the first frame update
     void Start()
     {
-        
+        movement = new Vector3(0f, 0f, 1f);
     }
 
     // Update is called once per frame
     void Update()
     {
-        //transform.position += 
+        if (CameraController.moveUp == true)
+        {
+            transform.position += movement * speed;
+        }
+        else if (CameraController.moveDown == true)
+        {
+            transform.position -= movement * speed;
+        }
     }
 }

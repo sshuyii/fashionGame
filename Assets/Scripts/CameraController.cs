@@ -4,9 +4,13 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-   private Vector3 fp;   //First touch position
+    private Vector3 fp;   //First touch position
     private Vector3 lp;   //Last touch position
     private float dragDistance;  //minimum distance for a swipe to be registered
+    public GameObject player;
+
+    //offset between player and camera in z axis
+    private float offsetZ;
 
     public GameObject cameraRight;
     public GameObject cameraLeft;
@@ -22,6 +26,14 @@ public class CameraController : MonoBehaviour
 
     private float time = 0;
     public float speed;
+    
+    public bool moveUp;
+    public bool moveDown;
+    
+    //camera movement
+    private float cameraX;
+    private float cameraY;
+
         
     void Start()
     {
@@ -31,10 +43,23 @@ public class CameraController : MonoBehaviour
 
         cameraRightRotation = cameraRight.transform.rotation;
         cameraLeftRotation = cameraLeft.transform.rotation;
+
+        offsetZ = transform.position.z - player.transform.position.z;
     }
- 
+
     void Update()
     {
+
+        //camera should follow player, but only move in z direction
+        cameraX = transform.position.x;
+        cameraY = transform.position.y;
+
+        transform.position = new Vector3(cameraX, cameraY, player.transform.position.z + offsetZ);
+
+
+
+
+
         if (Input.touchCount == 1) // user is touching the screen with a single touch
         {
             Touch touch = Input.GetTouch(0); // get the touch
@@ -46,90 +71,127 @@ public class CameraController : MonoBehaviour
             else if (touch.phase == TouchPhase.Moved) // update the last position based on where they moved
             {
                 lp = touch.position;
-            }
-            else if (touch.phase == TouchPhase.Ended) //check if the finger is removed from the screen
-            {
-                lp = touch.position;  //last touch position. Ommitted if you use list
- 
-                //Check if drag distance is greater than 20% of the screen height
-                if (Mathf.Abs(lp.x - fp.x) > dragDistance || Mathf.Abs(lp.y - fp.y) > dragDistance)
-                {//It's a drag
-                 //check if the drag is vertical or horizontal
-                    if (Mathf.Abs(lp.x - fp.x) > Mathf.Abs(lp.y - fp.y))
-                    {   //If the horizontal movement is greater than the vertical movement...
-                        if ((lp.x > fp.x))  //If the movement was to the right)
-                        {   //Right swipe
-                            Debug.Log("Right Swipe");
-                            
-                            //Camera turns right
-                            rightSwipe = true;
+
+                
+                    //It's a drag
+                    //check if the drag is vertical
+                    if (Mathf.Abs(lp.x - fp.x) < Mathf.Abs(lp.y - fp.y))
+                    {
+                        if (lp.y > fp.y) //If the movement was up
+                        {
+                            //Up swipe
+                            Debug.Log("Up Swipe in Process");
+                            moveUp = true;
                         }
                         else
-                        {   //Left swipe
-                            Debug.Log("Left Swipe");
+                        {
+                            //Down swipe
+                            Debug.Log("Down Swipe in progress");
+                            moveDown = true;
+                        }
+                    }
+                
 
-                            leftSwipe = true;
+            }
+                else if (touch.phase == TouchPhase.Ended) //check if the finger is removed from the screen
+                {
+                    lp = touch.position; //last touch position. Ommitted if you use list
+
+                    moveUp = false;
+                    moveDown = false;
+
+                    //Check if drag distance is greater than 20% of the screen height
+                    if (Mathf.Abs(lp.x - fp.x) > dragDistance || Mathf.Abs(lp.y - fp.y) > dragDistance)
+                    {
+                        //It's a drag
+                        //check if the drag is vertical or horizontal
+                        if (Mathf.Abs(lp.x - fp.x) > Mathf.Abs(lp.y - fp.y))
+                        {
+                            //If the horizontal movement is greater than the vertical movement...
+                            if ((lp.x > fp.x)) //If the movement was to the right)
+                            {
+                                //Right swipe
+                                Debug.Log("Right Swipe");
+
+                                //Camera turns right
+                                rightSwipe = true;
+                            }
+                            else
+                            {
+                                //Left swipe
+                                Debug.Log("Left Swipe");
+
+                                leftSwipe = true;
+                            }
+                        }
+                        else
+                        {
+                            //the vertical movement is greater than the horizontal movement
+                            if (lp.y > fp.y) //If the movement was up
+                            {
+                                //Up swipe
+                                Debug.Log("Up Swipe");
+
+                            }
+                            else
+                            {
+                                //Down swipe
+                                Debug.Log("Down Swipe");
+                            }
                         }
                     }
                     else
-                    {   //the vertical movement is greater than the horizontal movement
-                        if (lp.y > fp.y)  //If the movement was up
-                        {   //Up swipe
-                            Debug.Log("Up Swipe");
-                        }
-                        else
-                        {   //Down swipe
-                            Debug.Log("Down Swipe");
-                        }
+                    {
+                        //It's a tap as the drag distance is less than 20% of the screen height
+                        Debug.Log("Tap");
+             
                     }
                 }
+            
+        }
+
+        //camera turn right and left
+            if (rightSwipe)
+            {
+                if (transform.position != cameraRightPosition && time < 2)
+                {
+                    time += Time.deltaTime;
+                    //print ("turn right");
+                    transform.position = Vector3.Lerp(transform.position, cameraRightPosition, Time.deltaTime * speed);
+                    transform.rotation =
+                        Quaternion.Slerp(transform.rotation, cameraRightRotation, Time.deltaTime * speed);
+
+                }
                 else
-                {   //It's a tap as the drag distance is less than 20% of the screen height
-                    Debug.Log("Tap");
+                {
+                    rightSwipe = false;
+                    transform.position = cameraRightPosition;
+                    transform.rotation = cameraRightRotation;
+                    time = 0;
                 }
             }
-        }
+            else if (leftSwipe)
+            {
+                if (transform.position != cameraLeftPosition && time < 2)
+                {
+                    print("turn left");
+                    time += Time.deltaTime;
+                    transform.position = Vector3.Lerp(transform.position, cameraLeftPosition, Time.deltaTime * speed);
+                    transform.rotation =
+                        Quaternion.Slerp(transform.rotation, cameraLeftRotation, Time.deltaTime * speed);
+
+                }
+                else
+                {
+                    leftSwipe = false;
+                    transform.position = cameraLeftPosition;
+                    transform.rotation = cameraLeftRotation;
+                    time = 0;
+                }
+
+            }
+
         
-        
-        //camera turn right
-        if (rightSwipe)
-        {
-            if (transform.position != cameraRightPosition && time < 2)
-            {
-                time += Time.deltaTime;
-                //print ("turn right");
-                transform.position = Vector3.Lerp(transform.position, cameraRightPosition, Time.deltaTime * speed);
-                transform.rotation = Quaternion.Slerp(transform.rotation, cameraRightRotation,  Time.deltaTime * speed);
-
-            }
-            else
-            {
-                rightSwipe = false;
-                transform.position = cameraRightPosition;
-                transform.rotation = cameraRightRotation;
-                time = 0;
-            }
-        }
-        else if (leftSwipe)
-        {
-            if (transform.position != cameraLeftPosition && time < 2)
-            {
-                print("turn left");
-                time += Time.deltaTime;
-                transform.position = Vector3.Lerp(transform.position, cameraLeftPosition, Time.deltaTime * speed);
-                transform.rotation = Quaternion.Slerp(transform.rotation, cameraLeftRotation,  Time.deltaTime * speed);
-                   
-            }
-            else
-            {
-                leftSwipe = false;
-                transform.position = cameraLeftPosition;
-                transform.rotation = cameraLeftRotation;
-                time = 0;
-            }
-
-        }
-
     }
 
 }
